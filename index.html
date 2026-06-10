@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>新型態住宿品牌追蹤器</title>
+<link href="https://unpkg.com/maplibre-gl/dist/maplibre-gl.css" rel="stylesheet" />
+<style>
+:root {
+  --bg: #f7f6f3; --surface: #ffffff;
+  --border: rgba(0,0,0,0.08); --border-md: rgba(0,0,0,0.14);
+  --text: #181715; --text-2: #65635e; --text-3: #a09d97;
+  --radius: 10px; --radius-sm: 6px;
+  --sidebar: 240px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system,'Helvetica Neue',Arial,sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+/* HEADER */
+header { padding: 24px 28px 0; display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+.header-title { font-size: 18px; font-weight: 600; letter-spacing: -0.3px; }
+.header-sub { font-size: 12px; color: var(--text-3); margin-top: 3px; }
+.header-actions { display: flex; gap: 8px; align-items: center; margin-bottom: 2px; }
+.hdr-btn { font-size: 12px; padding: 5px 12px; border: 0.5px solid var(--border-md); border-radius: 999px; background: var(--surface); cursor: pointer; color: var(--text-2); transition: all 0.12s; white-space: nowrap; }
+.hdr-btn:hover { border-color: var(--text); color: var(--text); }
+.hdr-btn.active-filter { background: var(--text); color: #fff; border-color: var(--text); }
+
+/* TABS */
+.tab-bar { display: flex; padding: 14px 28px 0; border-bottom: 0.5px solid var(--border-md); }
+.tab { font-size: 13px; padding: 7px 13px 9px; cursor: pointer; border: none; background: transparent; color: var(--text-2); border-bottom: 2px solid transparent; transition: all 0.12s; }
+.tab.active { color: var(--text); border-bottom-color: var(--text); font-weight: 500; }
+.tab:hover:not(.active) { color: var(--text); }
+
+/* LAYOUT */
+.content-area { padding: 20px 28px 48px; }
+
+/* LIST */
+.type-section { margin-bottom: 24px; }
+.type-header { display: flex; align-items: center; gap: 8px; margin-bottom: 9px; }
+.type-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.type-label-txt { font-size: 11px; font-weight: 600; color: var(--text-2); letter-spacing: 0.07em; text-transform: uppercase; }
+.type-count-txt { font-size: 11px; color: var(--text-3); }
+.brand-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* BRAND CARD */
+.brand-card {
+  background: var(--surface); border: 0.5px solid var(--border-md);
+  border-left: 3px solid var(--tc,#ccc); border-radius: var(--radius);
+  padding: 11px 12px 11px 11px; cursor: pointer; transition: background 0.12s;
+  width: 200px; flex-shrink: 0;
+}
+.brand-card:hover { background: #fafaf8; }
+.brand-card.active { background: var(--tc-bg,#f5f5f5); border-color: var(--tc-mid,#ccc); border-left-color: var(--tc,#888); border-left-width: 3px; }
+.brand-card.watchlisted { box-shadow: inset 0 0 0 1.5px var(--tc,#ccc); }
+.bc-top { display: flex; align-items: center; gap: 9px; margin-bottom: 7px; }
+.bc-avatar { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; letter-spacing: 0.02em; }
+.bc-meta { flex: 1; min-width: 0; }
+.bc-name { font-size: 13px; font-weight: 600; margin-bottom: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bc-origin { font-size: 10px; color: var(--text-3); }
+.bc-watch-btn { background: none; border: none; cursor: pointer; font-size: 14px; color: var(--text-3); padding: 0 0 0 2px; flex-shrink: 0; line-height: 1; transition: color 0.12s; }
+.bc-watch-btn.on { color: #e8a020; }
+.bc-tagline { font-size: 11px; color: var(--text-2); line-height: 1.4; margin-bottom: 8px; }
+.activity-row { display: flex; align-items: center; gap: 6px; }
+.activity-bar-wrap { flex: 1; height: 3px; background: var(--border); border-radius: 99px; overflow: hidden; }
+.activity-bar-fill { height: 100%; border-radius: 99px; }
+.momentum-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+
+/* DETAIL DRAWER */
+.detail-drawer { border-radius: var(--radius); padding: 16px 20px; margin-top: 6px; border: 1px solid var(--tc-mid,#e0e0e0); border-left: 3px solid var(--tc,#aaa); background: var(--tc-bg,#fafafa); }
+.dd-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 9px; }
+.dd-name { font-size: 15px; font-weight: 600; }
+.dd-badge { display: inline-block; font-size: 11px; padding: 2px 9px; border-radius: 999px; font-weight: 500; margin-top: 3px; }
+.dd-close { background: none; border: 0.5px solid var(--border-md); border-radius: var(--radius-sm); padding: 3px 9px; cursor: pointer; font-size: 12px; color: var(--text-2); }
+.dd-close:hover { background: rgba(0,0,0,0.05); }
+.dd-desc { font-size: 13px; color: var(--text-2); line-height: 1.65; margin-bottom: 11px; }
+.dd-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 6px; margin-bottom: 10px; }
+.dd-item { background: rgba(255,255,255,0.75); border-radius: var(--radius-sm); padding: 7px 10px; border: 0.5px solid var(--tc-mid,#e0e0e0); }
+.dd-item-l { font-size: 11px; color: var(--text-3); margin-bottom: 2px; }
+.dd-item-v { font-size: 12px; font-weight: 500; line-height: 1.4; }
+.dd-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.deep-btn { font-size: 12px; padding: 5px 12px; border: 0.5px solid var(--tc-mid,#ccc); border-radius: var(--radius-sm); background: rgba(255,255,255,0.8); cursor: pointer; color: var(--text-2); transition: all 0.12s; }
+.deep-btn:hover { background: var(--text); color: #fff; border-color: var(--text); }
+
+/* WATCHLIST BANNER */
+.watchlist-banner { background: #fffbf0; border: 0.5px solid #f0d080; border-radius: var(--radius); padding: 10px 14px; margin-bottom: 16px; display: none; }
+.watchlist-banner.show { display: block; }
+.watchlist-banner-title { font-size: 11px; font-weight: 600; color: #8a6a00; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+.watchlist-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.watchlist-chip { font-size: 11px; padding: 3px 9px; border-radius: 999px; background: #fff3c0; color: #7a5c00; border: 0.5px solid #e0c040; cursor: pointer; }
+.watchlist-chip:hover { background: #ffe066; }
+
+/* COMPARE */
+.compare-bar { background: var(--surface); border: 0.5px solid var(--border-md); border-radius: var(--radius); padding: 10px 14px; margin-bottom: 14px; display: none; align-items: center; gap: 10px; flex-wrap: wrap; }
+.compare-bar.show { display: flex; }
+.compare-bar-label { font-size: 12px; color: var(--text-2); }
+.compare-chips { display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
+.compare-chip { font-size: 12px; padding: 3px 10px; border-radius: 999px; background: var(--bg); border: 0.5px solid var(--border-md); color: var(--text-2); display: flex; align-items: center; gap: 5px; }
+.compare-chip button { background: none; border: none; cursor: pointer; font-size: 12px; color: var(--text-3); padding: 0; line-height: 1; }
+.compare-btn { font-size: 12px; padding: 5px 13px; background: var(--text); color: #fff; border: none; border-radius: var(--radius-sm); cursor: pointer; }
+.compare-btn:hover { opacity: 0.82; }
+
+/* COMPARE TABLE */
+.compare-table-wrap { overflow-x: auto; margin-bottom: 16px; display: none; }
+.compare-table-wrap.show { display: block; }
+.compare-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.compare-table th { text-align: left; padding: 8px 12px; background: var(--bg); font-weight: 600; font-size: 11px; color: var(--text-2); border-bottom: 0.5px solid var(--border-md); }
+.compare-table td { padding: 8px 12px; border-bottom: 0.5px solid var(--border); vertical-align: top; color: var(--text-2); }
+.compare-table tr:last-child td { border-bottom: none; }
+.compare-table .row-label { color: var(--text-3); font-size: 11px; white-space: nowrap; }
+
+/* MAP */
+.pill-bar { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.pill { font-size: 12px; padding: 4px 11px; border-radius: 999px; border: 0.5px solid var(--border-md); background: transparent; color: var(--text-2); cursor: pointer; transition: all 0.12s; }
+.pill.active { background: var(--text); color: #fff; border-color: var(--text); }
+.map-legend { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 10px; }
+.leg-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text-2); }
+.leg-dot { width: 7px; height: 7px; border-radius: 50%; }
+#map { width: 100%; height: 460px; border-radius: var(--radius); border: 0.5px solid var(--border-md); overflow: hidden; }
+.map-popup-name { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+.map-popup-origin { font-size: 11px; color: var(--text-3); margin-bottom: 5px; }
+.map-popup-tagline { font-size: 12px; color: var(--text-2); line-height: 1.4; margin-bottom: 7px; }
+.map-popup-badge { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 999px; font-weight: 500; }
+.maplibregl-popup-content { border-radius: 8px !important; padding: 12px 14px !important; box-shadow: 0 2px 12px rgba(0,0,0,0.12) !important; border: 0.5px solid rgba(0,0,0,0.1) !important; min-width: 180px; max-width: 240px; }
+.maplibregl-popup-tip { display: none; }
+.maplibregl-popup-close-button { font-size: 16px; color: #aaa; right: 8px; top: 6px; }
+
+/* COMPARE MODE */
+.compare-mode-hint { background: #1a1917; color: #fff; border-radius: var(--radius); padding: 10px 16px; margin-bottom: 14px; font-size: 13px; display: none; align-items: center; gap: 10px; }
+.compare-mode-hint.show { display: flex; }
+.compare-mode-hint-text { flex: 1; }
+.compare-mode-hint-count { font-size: 13px; font-weight: 600; color: #a8f0c6; }
+.brand-card.comparing-mode { cursor: crosshair; }
+.brand-card.comparing-mode:hover { outline: 2px dashed var(--tc, #ccc); outline-offset: 2px; }
+.brand-card.in-compare { outline: 2.5px solid var(--tc, #888) !important; outline-offset: 2px; background: var(--tc-bg, #f5f5f5) !important; }
+.bc-check { width: 18px; height: 18px; border-radius: 5px; border: 1.5px solid var(--border-md); background: #fff; display: none; align-items: center; justify-content: center; flex-shrink: 0; font-size: 11px; transition: all 0.12s; }
+.comparing-mode .bc-check { display: flex; }
+.in-compare .bc-check { background: var(--tc, #888); border-color: var(--tc, #888); color: #fff; }
+.diff-card { background: var(--surface); border: 0.5px solid var(--border-md); border-radius: var(--radius); padding: 14px 16px; }
+.diff-card-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-3); margin-bottom: 10px; }
+.diff-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: flex-start; }
+.diff-icon { font-size: 14px; flex-shrink: 0; }
+.diff-text { font-size: 12px; color: var(--text-2); line-height: 1.5; }
+.diff-text strong { font-weight: 600; color: var(--text); }
+.spectrum-wrap { background: var(--surface); border: 0.5px solid var(--border-md); border-radius: var(--radius); padding: 14px 18px; margin-bottom: 1rem; }
+.spectrum-label { font-size: 12px; font-weight: 600; color: var(--text-2); margin-bottom: 10px; }
+.spectrum-ends { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-3); margin-bottom: 6px; }
+.spectrum-axis { position: relative; height: 4px; background: var(--border); border-radius: 99px; margin-bottom: 28px; }
+.s-dot { position: absolute; top: -3px; width: 10px; height: 10px; border-radius: 50%; transform: translateX(-50%); }
+.s-lbl { position: absolute; top: 10px; font-size: 10px; transform: translateX(-50%); white-space: nowrap; font-weight: 500; }
+.spectrum-note { font-size: 12px; color: var(--text-2); line-height: 1.6; }
+
+/* SEARCH */
+.search-hint { font-size: 13px; color: var(--text-2); margin-bottom: 12px; }
+.search-row { display: flex; gap: 8px; margin-bottom: 10px; }
+.search-input { flex: 1; padding: 9px 13px; border: 0.5px solid var(--border-md); border-radius: var(--radius-sm); font-size: 13px; background: var(--surface); color: var(--text); outline: none; font-family: inherit; }
+.search-input:focus { border-color: var(--text); }
+.search-btn { padding: 9px 16px; background: var(--text); color: #fff; border: none; border-radius: var(--radius-sm); font-size: 13px; cursor: pointer; white-space: nowrap; font-family: inherit; }
+.search-btn:hover { opacity: 0.82; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+.chip { font-size: 12px; padding: 4px 12px; border: 0.5px solid var(--border-md); border-radius: 999px; background: var(--surface); cursor: pointer; color: var(--text-2); font-family: inherit; }
+.chip:hover { border-color: var(--text); color: var(--text); }
+.ai-result { background: var(--surface); border: 0.5px solid var(--border-md); border-radius: var(--radius); padding: 18px 20px; display: none; }
+.ai-result.show { display: block; }
+.ai-result-lbl { font-size: 11px; color: var(--text-3); margin-bottom: 10px; letter-spacing: 0.05em; text-transform: uppercase; }
+.ai-result-text { font-size: 13px; line-height: 1.75; color: var(--text); }
+.ai-note { font-size: 11px; color: var(--text-3); margin-top: 10px; padding-top: 8px; border-top: 0.5px solid var(--border); }
+.api-key-notice { background: #f0f7ff; border: 0.5px solid #b5d4f4; border-radius: var(--radius); padding: 12px 16px; margin-bottom: 14px; font-size: 12px; color: #0C447C; line-height: 1.6; }
+.api-key-row { display: flex; gap: 8px; margin-top: 8px; }
+.api-key-input { flex: 1; padding: 7px 11px; border: 0.5px solid #b5d4f4; border-radius: var(--radius-sm); font-size: 12px; background: #fff; color: var(--text); outline: none; font-family: inherit; }
+.api-key-save { padding: 7px 14px; background: #185FA5; color: #fff; border: none; border-radius: var(--radius-sm); font-size: 12px; cursor: pointer; font-family: inherit; }
+
+/* COMPARE MODAL */
+.compare-modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 200; align-items: center; justify-content: center; padding: 32px 20px; }
+.compare-modal-overlay.show { display: flex; }
+.compare-modal { background: var(--surface); border-radius: 14px; max-width: 860px; width: 100%; max-height: 85vh; overflow-y: auto; box-shadow: 0 12px 48px rgba(0,0,0,0.2); }
+.compare-modal-header { display: flex; justify-content: space-between; align-items: center; padding: 18px 24px; border-bottom: 0.5px solid var(--border-md); position: sticky; top: 0; background: var(--surface); z-index: 1; border-radius: 14px 14px 0 0; }
+.compare-modal-title { font-size: 15px; font-weight: 600; }
+.compare-modal-close { background: none; border: 0.5px solid var(--border-md); border-radius: var(--radius-sm); padding: 4px 10px; cursor: pointer; font-size: 13px; color: var(--text-2); }
+.compare-modal-close:hover { background: var(--bg); }
+.compare-modal-body { padding: 20px 24px 28px; }
+.compare-brand-headers { display: grid; gap: 8px; margin-bottom: 12px; }
+.compare-brand-card { background: var(--bg); border-radius: var(--radius-sm); padding: 11px 14px; border-top: 3px solid var(--tc, #ccc); }
+.compare-brand-name { font-size: 13px; font-weight: 600; margin-bottom: 3px; }
+.compare-brand-badge { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 999px; font-weight: 500; }
+.compare-table { border: 0.5px solid var(--border-md); border-radius: var(--radius); overflow: hidden; }
+.compare-row { display: grid; border-bottom: 0.5px solid var(--border); }
+.compare-row:last-child { border-bottom: none; }
+.compare-row:nth-child(even) { background: #fafaf8; }
+.compare-cell { padding: 10px 14px; font-size: 12px; color: var(--text-2); border-right: 0.5px solid var(--border); line-height: 1.5; vertical-align: top; }
+.compare-cell:last-child { border-right: none; }
+.compare-cell.label { font-size: 11px; font-weight: 500; color: var(--text-3); background: var(--bg); white-space: nowrap; }
+
+.hidden { display: none !important; }
+
+@media (max-width: 640px) {
+  /* LAYOUT */
+  header { padding: 16px 16px 0; flex-direction: column; align-items: flex-start; gap: 10px; }
+  .header-actions { width: 100%; justify-content: flex-start; flex-wrap: wrap; gap: 6px; }
+  .hdr-btn { font-size: 11px; padding: 5px 10px; }
+  .tab-bar { padding: 10px 16px 0; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; gap: 0; white-space: nowrap; }
+  .tab-bar::-webkit-scrollbar { display: none; }
+  .tab { font-size: 12px; padding: 6px 11px 8px; flex-shrink: 0; }
+  .content-area { padding: 14px 16px 40px; }
+
+  /* BRAND CARDS — full width, stacked */
+  .brand-card { width: 100%; }
+  .brand-row { flex-direction: column; }
+
+  /* DETAIL DRAWER */
+  .dd-grid { grid-template-columns: 1fr 1fr; }
+  .dd-desc { font-size: 12px; }
+  .dd-actions { flex-direction: column; }
+  .deep-btn { width: 100%; text-align: center; }
+
+  /* MAP */
+  #map { height: 300px; }
+  .pill-bar { gap: 5px; }
+  .pill { font-size: 11px; padding: 4px 9px; }
+
+  /* COMPARE MODE HINT — stack vertically */
+  .compare-mode-hint { flex-wrap: wrap; gap: 8px; }
+  .compare-mode-hint-text { width: 100%; font-size: 12px; }
+
+  /* COMPARE MODAL — full screen on mobile */
+  .compare-modal-overlay { padding: 0; align-items: flex-end; }
+  .compare-modal { border-radius: 14px 14px 0 0; max-height: 90vh; }
+  .compare-modal-header { padding: 14px 16px; }
+  .compare-modal-body { padding: 14px 16px 28px; }
+  /* Compare rows become card-per-brand on mobile */
+  .compare-row { grid-template-columns: 1fr !important; }
+  .compare-cell.label { border-right: none; border-bottom: none; padding: 8px 14px 2px; background: transparent; color: var(--text-3); font-size: 10px; }
+  .compare-cell { border-right: none; padding: 2px 14px 8px; border-bottom: 0.5px solid var(--border); }
+  .compare-cell:last-child { border-bottom: 0.5px solid var(--border-md); }
+
+  /* DIFF TAB — split panel stacks vertically */
+  .diff-split { grid-template-columns: 1fr !important; }
+  .diff-divider { display: none; }
+  .diff-right { border-top: 0.5px solid var(--border-md); }
+
+  /* SPECTRUM AXIS — labels may overlap, reduce font */
+  .s-lbl { font-size: 9px; }
+
+  /* SEARCH */
+  .chips { gap: 5px; }
+  .chip { font-size: 11px; padding: 4px 10px; }
+  .api-key-row { flex-direction: column; }
+  .api-key-save { width: 100%; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="header-title">新型態住宿品牌追蹤器</div>
+    <div class="header-sub">全球 14 個品牌 · 5 種模式</div>
+  </div>
+  <div class="header-actions">
+    <button class="hdr-btn" id="watchlistToggle" onclick="toggleWatchlistFilter()">☆ 關注清單</button>
+    <button class="hdr-btn" id="compareToggle" onclick="toggleCompareMode()">⊞ 比較模式</button>
+    <button class="hdr-btn" onclick="exportCSV()">↓ 匯出 CSV</button>
+  </div>
+</header>
+
+<div class="tab-bar">
+  <button class="tab" data-tab="diff">與傳統飯店差異</button>
+  <button class="tab active" data-tab="list">品牌列表</button>
+  <button class="tab" data-tab="map">地圖視圖</button>
+  <button class="tab" data-tab="search">AI 搜尋</button>
+</div>
+
+<div class="content-area">
+
+    <!-- LIST TAB -->
+    <div id="tab-list">
+      <div class="compare-mode-hint" id="compareModeHint">
+        <span class="compare-mode-hint-text">比較模式已開啟，點選品牌卡片加入比較（最多 3 個）</span>
+        <span class="compare-mode-hint-count" id="compareModeCount">已選 0 個</span>
+        <button onclick="runCompare()" style="padding:5px 12px;background:#fff;color:#1a1917;border:none;border-radius:var(--radius-sm);font-size:12px;cursor:pointer;font-weight:500;">開始對比 →</button>
+        <button onclick="clearCompare()" style="padding:5px 10px;background:rgba(255,255,255,0.15);color:#fff;border:none;border-radius:var(--radius-sm);font-size:12px;cursor:pointer;">取消</button>
+      </div>
+      <div class="watchlist-banner" id="watchlistBanner">
+        <div class="watchlist-banner-title">☆ 關注清單</div>
+        <div class="watchlist-chips" id="watchlistChips"></div>
+      </div>
+      <div class="compare-table-wrap" id="compareTableWrap"></div>
+      <div id="listRoot"></div>
+    </div>
+
+    <!-- DIFF TAB -->
+    <div id="tab-diff" class="hidden">
+      <p style="font-size:13px;color:var(--text-2);line-height:1.7;margin-bottom:1.5rem;max-width:680px;">傳統飯店集團的邏輯建立在大量標準化客房、短暫過境式住宿、純計夜收費三個前提上。這 14 個品牌打破的，是不同層次的假設——住宿不再是核心產品，而是載體；資產關係重新定義；稀缺性取代規模。</p>
+
+      <!-- Split comparison -->
+      <div class="diff-split" style="display:grid;grid-template-columns:1fr 3px 1fr;gap:0;margin-bottom:1.5rem;background:var(--surface);border:0.5px solid var(--border-md);border-radius:var(--radius);overflow:hidden;">
+
+        <!-- Left: Traditional -->
+        <div style="padding:20px 24px;">
+          <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-3);margin-bottom:16px;">傳統飯店集團</div>
+          <div style="display:flex;flex-direction:column;gap:14px;">
+            <div style="display:flex;gap:12px;align-items:flex-start;">
+              <div style="width:28px;height:28px;border-radius:6px;background:#f0f0ee;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;">🏢</div>
+              <div><div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:2px;">規模即護城河</div><div style="font-size:12px;color:var(--text-3);line-height:1.5;">連鎖複製與品牌授權費獲利，客房數量是核心競爭力</div></div>
+            </div>
+            <div style="display:flex;gap:12px;align-items:flex-start;">
+              <div style="width:28px;height:28px;border-radius:6px;background:#f0f0ee;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;">⏱</div>
+              <div><div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:2px;">過境式住宿</div><div style="font-size:12px;color:var(--text-3);line-height:1.5;">平均停留 2–3 晚，標準化體驗、快速周轉</div></div>
+            </div>
+            <div style="display:flex;gap:12px;align-items:flex-start;">
+              <div style="width:28px;height:28px;border-radius:6px;background:#f0f0ee;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;">🧾</div>
+              <div><div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:2px;">計夜收費</div><div style="font-size:12px;color:var(--text-3);line-height:1.5;">空房率是主要風險，收益高度依賴入住率</div></div>
+            </div>
+            <div style="display:flex;gap:12px;align-items:flex-start;">
+              <div style="width:28px;height:28px;border-radius:6px;background:#f0f0ee;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;">🔗</div>
+              <div><div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:2px;">匿名交易關係</div><div style="font-size:12px;color:var(--text-3);line-height:1.5;">會員積點制，客人與品牌是交易而非社群</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Divider -->
+        <div class="diff-divider" style="background:linear-gradient(to bottom, transparent, var(--border-md) 20%, var(--border-md) 80%, transparent);"></div>
+
+        <!-- Right: New brands -->
+        <div class="diff-right" style="padding:20px 24px;background:#fafaf8;">
+          <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:#0C447C;margin-bottom:16px;">新型態住宿品牌</div>
+          <div style="display:flex;flex-direction:column;gap:14px;">
+            <div style="display:flex;gap:12px;align-items:flex-start;">
+              <div style="width:28px;height:28px;border-radius:6px;background:#EBF4FD;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;">✦</div>
+              <div><div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:2px;">稀缺性即護城河</div><div style="font-size:12px;color:var(--text-3);line-height:1.5;">限量物件、特定建築師、不可複製地景，接近奢侈品邏輯</div></div>
+            </div>
+            <div style="display:flex;gap:12px;align-items:flex-start;">
+              <div style="width:28px;height:28px;border-radius:6px;background:#EBF4FD;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;">🏡</div>
+              <div><div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:2px;">居住感與身份認同</div><div style="font-size:12px;color:var(--text-3);line-height:1.5;">住宿是載體，販賣健康哲學、社群歸屬、生活方式</div></div>
+            </div>
+            <div style="display:flex;gap:12px;align-items:flex-start;">
+              <div style="width:28px;height:28px;border-radius:6px;background:#EBF4FD;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;">💡</div>
+              <div><div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:2px;">多元收益模型</div><div style="font-size:12px;color:var(--text-3);line-height:1.5;">訂閱費、持分產權、品牌住宅、會員費、管理費並存</div></div>
+            </div>
+            <div style="display:flex;gap:12px;align-items:flex-start;">
+              <div style="width:28px;height:28px;border-radius:6px;background:#EBF4FD;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;">🤝</div>
+              <div><div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:2px;">共同持有人關係</div><div style="font-size:12px;color:var(--text-3);line-height:1.5;">客人是「持分人」或「會員」，黏著度遠高於積點制</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="spectrum-wrap">
+        <div class="spectrum-label">五種模式在「傳統 ↔ 新型態」軸線上的位置</div>
+        <div class="spectrum-ends"><span>← 傳統飯店邏輯</span><span>新型態邏輯 →</span></div>
+        <div class="spectrum-axis">
+          <div class="s-dot" style="left:15%;background:#D85A30;"></div><div class="s-lbl" style="left:15%;color:#D85A30;">生活方式精品</div>
+          <div class="s-dot" style="left:38%;background:#378ADD;"></div><div class="s-lbl" style="left:38%;color:#378ADD;">永續健康</div>
+          <div class="s-dot" style="left:56%;background:#BA7517;"></div><div class="s-lbl" style="left:56%;color:#BA7517;">沈浸體驗</div>
+          <div class="s-dot" style="left:74%;background:#1D9E75;"></div><div class="s-lbl" style="left:74%;color:#1D9E75;">訂閱會員</div>
+          <div class="s-dot" style="left:91%;background:#7F77DD;"></div><div class="s-lbl" style="left:91%;color:#7F77DD;">共有產權</div>
+        </div>
+        <p class="spectrum-note">生活方式精品（Ennismore、Aethos）離傳統飯店最近——仍計夜收費，但靠品牌個性與社群感拉開距離。共有產權（Not a Hotel、Pacaso）離最遠——客人是資產持有人，財務關係已根本不同。</p>
+      </div>
+      <button onclick="goSearch('新型態住宿品牌哪些最有可能被傳統飯店集團收購')" style="font-size:12px;padding:6px 14px;border:0.5px solid var(--border-md);border-radius:var(--radius-sm);background:var(--surface);cursor:pointer;color:var(--text-2);margin-top:4px;">哪些品牌最可能被傳統集團收購？ →</button>
+    </div>
+
+    <!-- MAP TAB -->
+    <div id="tab-map" class="hidden">
+      <div class="pill-bar" id="mapPills">
+        <button class="pill active" data-filter="all">全部</button>
+        <button class="pill" data-filter="co-own" style="display:flex;align-items:center;gap:5px;"><span style="width:8px;height:8px;border-radius:50%;background:#7F77DD;flex-shrink:0;"></span>共有產權</button>
+        <button class="pill" data-filter="subscription" style="display:flex;align-items:center;gap:5px;"><span style="width:8px;height:8px;border-radius:50%;background:#1D9E75;flex-shrink:0;"></span>訂閱會員</button>
+        <button class="pill" data-filter="lifestyle" style="display:flex;align-items:center;gap:5px;"><span style="width:8px;height:8px;border-radius:50%;background:#D85A30;flex-shrink:0;"></span>生活方式精品</button>
+        <button class="pill" data-filter="wellness" style="display:flex;align-items:center;gap:5px;"><span style="width:8px;height:8px;border-radius:50%;background:#378ADD;flex-shrink:0;"></span>永續健康</button>
+        <button class="pill" data-filter="experience" style="display:flex;align-items:center;gap:5px;"><span style="width:8px;height:8px;border-radius:50%;background:#BA7517;flex-shrink:0;"></span>沈浸體驗</button>
+      </div>
+      <div id="map"></div>
+    </div>
+
+    <!-- SEARCH TAB -->
+    <div id="tab-search" class="hidden">
+      <div class="search-wrap">
+        <div class="api-key-notice" id="apiKeyNotice">
+          <strong>設定 API Key 以啟用即時 AI 搜尋</strong><br>
+          前往 <a href="https://console.anthropic.com" target="_blank" style="color:#185FA5;">console.anthropic.com</a> 取得 API Key，貼入後儲存即可使用。Key 僅存在你的瀏覽器本地，不會上傳任何伺服器。
+          <div class="api-key-row">
+            <input class="api-key-input" id="apiKeyInput" type="password" placeholder="sk-ant-..." />
+            <button class="api-key-save" onclick="saveApiKey()">儲存</button>
+          </div>
+        </div>
+        <p class="search-hint">輸入品牌名稱或關鍵字，AI 即時聯網查詢最新資訊</p>
+        <div class="search-row">
+          <input class="search-input" id="searchInput" type="text" placeholder="例：Not a Hotel 最新動態、共有產權趨勢..."/>
+          <button class="search-btn" onclick="doSearch()">搜尋</button>
+        </div>
+        <div class="chips">
+          <button class="chip" onclick="qs('Selina 品牌定位與最新動態 2025')">Selina</button>
+          <button class="chip" onclick="qs('全球共有產權住宿品牌 2025 趨勢')">共有產權趨勢</button>
+          <button class="chip" onclick="qs('Not a Hotel 日本新型態飯店 2025 最新')">日本新型態</button>
+          <button class="chip" onclick="qs('wellness hotel 健康住宿品牌最新發展')">健康住宿</button>
+          <button class="chip" onclick="qs('Ennismore 品牌組合策略 2025')">Ennismore</button>
+          <button class="chip" onclick="qs('新型態住宿品牌哪些最有可能被傳統飯店集團收購')">可能被收購的品牌</button>
+        </div>
+        <div class="ai-result" id="aiResult">
+          <div class="ai-result-lbl" id="aiLbl"></div>
+          <div class="ai-result-text" id="aiText"></div>
+          <div class="ai-note" id="aiNote"></div>
+        </div>
+      </div>
+    </div>
+
+</div>
+
+<!-- COMPARE MODAL -->
+<div class="compare-modal-overlay" id="compareModal" onclick="if(event.target===this)closeCompareModal()">
+  <div class="compare-modal">
+    <div class="compare-modal-header">
+      <div class="compare-modal-title" id="compareModalTitle">品牌比較</div>
+      <button class="compare-modal-close" onclick="closeCompareModal()">✕ 關閉</button>
+    </div>
+    <div class="compare-modal-body" id="compareModalBody"></div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/maplibre-gl/dist/maplibre-gl.js"></script>
+<script>
+const TYPES = {
+  'co-own':       { dot:'#7F77DD', mid:'#AFA9EC', bg:'#F0EFFE', txt:'#3C3489', label:'共有產權' },
+  'subscription': { dot:'#1D9E75', mid:'#5DCAA5', bg:'#EAF8F2', txt:'#085041', label:'訂閱會員' },
+  'lifestyle':    { dot:'#D85A30', mid:'#F0997B', bg:'#FDF0EB', txt:'#712B13', label:'生活方式精品' },
+  'wellness':     { dot:'#378ADD', mid:'#85B7EB', bg:'#EBF4FD', txt:'#0C447C', label:'永續健康' },
+  'experience':   { dot:'#BA7517', mid:'#EF9F27', bg:'#FDF4E3', txt:'#633806', label:'沈浸體驗' },
+};
+const MOMENTUM = {
+  high: { color:'#1D9E75' }, med: { color:'#BA7517' }, low: { color:'#a09d97' }
+};
+
+const brands = [
+  { id:'nah',        name:'Not a Hotel',      origin:'日本 · 2020',    type:'co-own',       tagline:'買部分產權，不住時品牌代出租',      locations:10,  momentum:'high', momentumLabel:'快速擴張', desc:'業主購買別墅部分使用天數，閒置時由品牌統一出租。合作建築師包括藤本壯介、BIG等。2025年底推出HERITAGE（京都）與vertex（ZHA設計沖繩）兩個對外開放品牌。', model:'部分產權 + 天數制', entry:'購買使用天數',      market:'日本全國10+據點',     news:'2025年12月推出HERITAGE & vertex', lon:136,  lat:35,   deep:'深入研究 Not a Hotel 的商業模式與最新動態' },
+  { id:'pacaso',     name:'Pacaso',            origin:'美國 · 2020',    type:'co-own',       tagline:'豪宅切割8份，每份最多44晚/年',      locations:40,  momentum:'high', momentumLabel:'高速成長', desc:'Zillow前高管創立，切割為最多8份LLC持分出售，歷史平均溢價6%轉售，40+市場活躍。', model:'持分所有權（LLC）',  entry:'購買1/8持分',       market:'美國為主，英法墨延伸', news:'2025持分轉售平均99天成交',        lon:-117, lat:34,   deep:'比較 Pacaso 與 Not a Hotel 的商業模式差異' },
+  { id:'ember',      name:'Ember',             origin:'美國 · 2021',    type:'co-own',       tagline:'高端度假屋持分，App智能排程',        locations:12,  momentum:'med',  momentumLabel:'穩定成長', desc:'專注美國高端度假地區，物件150萬至500萬美元，切割8至12份，以自有App公平分配旺季。', model:'持分所有權',          entry:'購買1/8至1/12持分', market:'美國度假勝地',       news:'持續擴充消費者融資方案',          lon:-111, lat:41,   deep:'了解 Ember 的演算法排程機制' },
+  { id:'inspirato',  name:'Inspirato',         origin:'美國 · 2011',    type:'subscription', tagline:'豪華度假訂閱，300+物件全球暢住',     locations:300, momentum:'high', momentumLabel:'整合中',   desc:'會員制豪華旅遊平台，300+豪宅及五星合作夥伴。2025年底被The Exclusive Collective收購，2026年合計預計營收超5億美元。', model:'訂閱制',              entry:'Club或Pass年度訂閱',market:'全球100+目的地',    news:'2025年底併入The Exclusive Collective', lon:-104, lat:39,   deep:'了解 Inspirato 被收購後的整合策略' },
+  { id:'onefinestay',name:'onefinestay',        origin:'英國 · 2009',    type:'subscription', tagline:'策展式頂級私人別墅管理',            locations:3000,momentum:'med',  momentumLabel:'平台整合', desc:'在倫敦、巴黎、紐約、LA等地策展3,000棟精選私人豪宅，提供24小時管家服務。2025年與Inspirato同被收購。', model:'高端短租 + 物業管理',entry:'單次預訂或會員',    market:'歐美主要城市',      news:'2025年納入The Exclusive Collective', lon:-0.1, lat:51.5, deep:'比較 onefinestay 與 Airbnb Luxe 的差異' },
+  { id:'exclusive',  name:'Exclusive Resorts', origin:'美國 · 2002',    type:'subscription', tagline:'目的地俱樂部先驅，主導最大整合',    locations:80,  momentum:'high', momentumLabel:'主導整合', desc:'AOL共同創辦人Steve Case投資。2025年底主導成立The Exclusive Collective，整合Inspirato與onefinestay，2026年合計營收超5億美元。', model:'目的地會員俱樂部',   entry:'高額會員費',        market:'全球主要度假地',    news:'2025年主導成立The Exclusive Collective', lon:-106, lat:40,   deep:'分析 The Exclusive Collective 整合策略' },
+  { id:'aethos',     name:'Aethos',            origin:'歐洲 · 2020',    type:'lifestyle',    tagline:'精品飯店 + 私人會員俱樂部',         locations:8,   momentum:'high', momentumLabel:'快速擴張', desc:'歐洲最快成長的生活方式住宿品牌，據點含馬略卡、米蘭、阿爾卑斯山。2026年在里斯本和帕爾馬推出首個純會員俱樂部。', model:'精品飯店 + 會員俱樂部',entry:'飯店入住或會員申請',market:'歐洲精品目的地',    news:'2026年推出首個純會員俱樂部',      lon:2.6,  lat:39.5, deep:'深入了解 Aethos 的會員俱樂部模式' },
+  { id:'ennismore',  name:'Ennismore',         origin:'英國 · 2011',    type:'lifestyle',    tagline:'14個子品牌的生活方式飯店集團',      locations:160, momentum:'med',  momentumLabel:'穩定擴展', desc:'旗下14個品牌含Gleneagles、Mondrian、25hours、The Hoxton、SLS等，與AccorHotels合資，是生活方式飯店領域品牌最多的集團。', model:'多品牌生活方式集團',entry:'各品牌分開入住',    market:'全球各地',          news:'2025年持續與新品牌合作',          lon:-2,   lat:52,   deep:'研究 Ennismore 的多品牌組合策略' },
+  { id:'sixsenses',  name:'Six Senses',        origin:'泰國 · 1995',    type:'wellness',     tagline:'頂級養生 + 品牌住宅模式',           locations:26,  momentum:'high', momentumLabel:'快速擴張', desc:'全球26個據點，深度療癒與再生農業結合。2026年在葡萄牙Comporta（70間客房+58戶住宅）與墨西哥Xala開幕。', model:'精品度假 + 品牌住宅',entry:'買住宅或飯店入住',  market:'全球高端度假地',    news:'2026年4個EMEA新據點開幕',         lon:100,  lat:14,   deep:'分析 Six Senses 品牌住宅的投資邏輯' },
+  { id:'siro',       name:'SIRO',              origin:'阿聯酋 · 2023',  type:'wellness',     tagline:'運動表現導向的新世代飯店',          locations:2,   momentum:'med',  momentumLabel:'早期擴張', desc:'Kerzner International旗下新品牌，專注身體表現最佳化，健身、復原、營養全套科學化方案。首個據點在黑山共和國。', model:'健康主題精品飯店',   entry:'飯店入住',          market:'歐洲、中東',        news:'2025年持續拓展歐洲市場',          lon:19,   lat:42,   deep:'比較 SIRO 與 Six Senses 的健康定位' },
+  { id:'soneva',     name:'Soneva',            origin:'馬爾地夫 · 1995',type:'wellness',     tagline:'奢華永續，部分物件可共有',          locations:4,   momentum:'low',  momentumLabel:'精品維持', desc:'馬爾地夫與泰國超高端永續度假，部分物件提供持分共有方案。強調無鞋環境、暗天空計畫、零浪費哲學。', model:'超奢精品 + 部分持分',entry:'飯店入住或持分購買',market:'馬爾地夫、泰國',    news:'持續擴張亞洲高端市場',            lon:73,   lat:4,    deep:'了解 Soneva 的永續奢華哲學' },
+  { id:'habitas',    name:'Our Habitas',       origin:'墨西哥 · 2016',  type:'experience',   tagline:'低衝擊設計，沈浸社群體驗',          locations:15,  momentum:'med',  momentumLabel:'合作擴張', desc:'永續低衝擊設計，在沙漠、森林等極地打造沈浸住宿。2025年與Ennismore合作進駐杜拜Hatta山區，以50個特製Airstream拖車呈現。', model:'設計型度假體驗',     entry:'單次預訂',          market:'中東、中美洲、非洲',news:'2025年與Ennismore合作進駐杜拜',   lon:55.5, lat:25,   deep:'了解 Our Habitas 的低衝擊設計哲學' },
+  { id:'selina',     name:'Selina',            origin:'巴拿馬 · 2015',  type:'experience',   tagline:'數位遊牧者的共居旅宿品牌',          locations:160, momentum:'low',  momentumLabel:'調整重組', desc:'專為遠距工作者與數位遊牧族設計，結合住宿、共工空間、社群活動。40+國家160+據點，提供靈活短期月租方案。', model:'共居旅宿 + 訂閱月租',entry:'單次入住或月度訂閱',market:'拉美、歐洲、東南亞',news:'持續優化月租與共工模式',          lon:-79,  lat:9,    deep:'深入了解 Selina 的數位遊牧定位' },
+  { id:'whitepod',   name:'White Pod',         origin:'瑞士 · 2004',    type:'experience',   tagline:'生態豪華艙體，Glamping先驅',        locations:1,   momentum:'low',  momentumLabel:'利基穩定', desc:'開創「生態豪華艙體」形式，影響全球大量Glamping品牌。在阿爾卑斯山以球型艙體對外開放，已成整個細分市場的參照品牌。', model:'特色場景精品飯店',   entry:'單次預訂',          market:'歐洲、全球複製',    news:'Glamping模式全球持續擴張',         lon:7,    lat:46,   deep:'了解 Glamping 市場的發展趨勢' },
+];
+
+const typeOrder = ['co-own','subscription','lifestyle','wellness','experience'];
+let activeCard = null, mapFilter = 'all', mapInstance = null, activePopup = null;
+let watchlist = JSON.parse(localStorage.getItem('watchlist') || '[]');
+let compareList = [];
+let compareModeOn = false;
+let watchlistFilterOn = false;
+
+function initApiKey() {
+  const saved = localStorage.getItem('anthropic_api_key');
+  if (saved) {
+    document.getElementById('apiKeyNotice').style.display = 'none';
+    document.getElementById('apiKeyInput').value = saved;
+  }
+}
+function saveApiKey() {
+  const val = document.getElementById('apiKeyInput').value.trim();
+  if (!val) return;
+  localStorage.setItem('anthropic_api_key', val);
+  document.getElementById('apiKeyNotice').style.display = 'none';
+}
+
+function avatarInitials(name) {
+  return name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+}
+
+function locScore(b) {
+  const mx = { 'co-own':40,'subscription':3000,'lifestyle':160,'wellness':26,'experience':160 };
+  return Math.min(b.locations / (mx[b.type] || 100), 1);
+}
+
+function buildList() {
+  const root = document.getElementById('listRoot');
+  root.innerHTML = '';
+  const showBrands = watchlistFilterOn ? brands.filter(b => watchlist.includes(b.id)) : brands;
+  const grouped = typeOrder.map(type => showBrands.filter(b => b.type === type)).filter(g => g.length);
+
+  grouped.forEach(group => {
+    const type = group[0].type;
+    const tc = TYPES[type];
+    const sec = document.createElement('div');
+    sec.className = 'type-section';
+    sec.innerHTML = `
+      <div class="type-header">
+        <span class="type-dot" style="background:${tc.dot}"></span>
+        <span class="type-label-txt">${tc.label}</span>
+        <span class="type-count-txt">${group.length} 個品牌</span>
+      </div>
+      <div class="brand-row" id="row-${type}"></div>
+      <div id="detail-${type}"></div>`;
+    root.appendChild(sec);
+    group.forEach(b => renderCard(b, document.getElementById('row-' + type)));
+  });
+  refreshWatchlistBanner();
+}
+
+function renderCard(b, container) {
+  const tc = TYPES[b.type];
+  const mo = MOMENTUM[b.momentum];
+  const sc = locScore(b);
+  const isWatched = watchlist.includes(b.id);
+  const isComparing = compareList.includes(b.id);
+  const card = document.createElement('div');
+  card.className = 'brand-card' + (activeCard === b.id ? ' active' : '') + (isWatched ? ' watchlisted' : '');
+  card.id = 'card-' + b.id;
+  card.style.cssText = `--tc:${tc.dot};--tc-mid:${tc.mid};--tc-bg:${tc.bg};`;
+
+  const avatarBg = tc.bg;
+  const avatarColor = tc.txt;
+  const initials = avatarInitials(b.name);
+
+  card.innerHTML = `
+    <div class="bc-top">
+      <div class="bc-avatar" style="background:${avatarBg};color:${avatarColor};">${initials}</div>
+      <div class="bc-meta">
+        <div class="bc-name">${b.name}</div>
+        <div class="bc-origin">${b.origin}</div>
+      </div>
+      <div class="bc-check">${isComparing ? '✓' : ''}</div>
+      <button class="bc-watch-btn ${isWatched ? 'on' : ''}" onclick="event.stopPropagation();toggleWatch('${b.id}')" title="加入關注清單">${isWatched ? '★' : '☆'}</button>
+    </div>
+    <div class="bc-tagline">${b.tagline}</div>
+    <div class="activity-row">
+      <div class="activity-bar-wrap">
+        <div class="activity-bar-fill" style="width:${Math.round(sc*100)}%;background:${tc.dot};opacity:0.65;"></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
+        <div class="momentum-dot" style="background:${mo.color};"></div>
+        <span style="font-size:10px;color:var(--text-3);">${b.momentumLabel}</span>
+      </div>
+    </div>`;
+
+  card.onclick = () => {
+    if (compareModeOn) { toggleCompare(b.id); return; }
+    toggleDetail(b);
+  };
+  if (compareModeOn) card.classList.add('comparing-mode');
+  if (isComparing) card.classList.add('in-compare');
+  container.appendChild(card);
+}
+
+function toggleDetail(b) {
+  const tc = TYPES[b.type];
+  const detEl = document.getElementById('detail-' + b.type);
+  if (activeCard === b.id) {
+    activeCard = null;
+    document.querySelectorAll('.brand-card').forEach(c => c.classList.remove('active'));
+    detEl.innerHTML = '';
+    return;
+  }
+  document.querySelectorAll('.brand-card').forEach(c => c.classList.remove('active'));
+  document.querySelectorAll('[id^="detail-"]').forEach(d => d.innerHTML = '');
+  activeCard = b.id;
+  document.getElementById('card-' + b.id)?.classList.add('active');
+  const mo = MOMENTUM[b.momentum];
+  const sc = locScore(b);
+  detEl.innerHTML = `
+    <div class="detail-drawer" style="--tc:${tc.dot};--tc-mid:${tc.mid};--tc-bg:${tc.bg};">
+      <div class="dd-top">
+        <div>
+          <div class="dd-name">${b.name}</div>
+          <span class="dd-badge" style="background:${tc.bg};color:${tc.txt};">${tc.label}</span>
+        </div>
+        <button class="dd-close" onclick="closeDetail('${b.type}')">✕</button>
+      </div>
+      <p class="dd-desc">${b.desc}</p>
+      <div class="dd-grid">
+        <div class="dd-item"><div class="dd-item-l">商業模式</div><div class="dd-item-v">${b.model}</div></div>
+        <div class="dd-item"><div class="dd-item-l">進入方式</div><div class="dd-item-v">${b.entry}</div></div>
+        <div class="dd-item"><div class="dd-item-l">主要市場</div><div class="dd-item-v">${b.market}</div></div>
+        <div class="dd-item"><div class="dd-item-l">最新動態</div><div class="dd-item-v">${b.news}</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 11px;background:rgba(255,255,255,0.6);border-radius:var(--radius-sm);border:0.5px solid var(--tc-mid,#e0e0e0);margin-bottom:10px;">
+        <div style="flex:1;">
+          <div style="font-size:11px;color:var(--text-3);margin-bottom:3px;">市場規模（同類型相對值）</div>
+          <div style="height:4px;background:var(--border);border-radius:99px;overflow:hidden;">
+            <div style="height:100%;width:${Math.round(sc*100)}%;background:${tc.dot};border-radius:99px;"></div>
+          </div>
+        </div>
+        <div style="text-align:right;flex-shrink:0;">
+          <div style="font-size:11px;color:var(--text-3);">市場動能</div>
+          <div style="font-size:12px;font-weight:600;color:${mo.color};">${b.momentumLabel}</div>
+        </div>
+      </div>
+      <div class="dd-actions">
+        <button class="deep-btn" onclick="goSearch('${b.deep}')">${b.deep} →</button>
+        <button class="deep-btn" onclick="addToCompare('${b.id}')">加入比較</button>
+      </div>
+    </div>`;
+}
+
+function closeDetail(type) {
+  activeCard = null;
+  document.querySelectorAll('.brand-card').forEach(c => c.classList.remove('active'));
+  document.getElementById('detail-' + type).innerHTML = '';
+}
+
+function toggleWatch(id) {
+  const idx = watchlist.indexOf(id);
+  if (idx === -1) watchlist.push(id); else watchlist.splice(idx, 1);
+  localStorage.setItem('watchlist', JSON.stringify(watchlist));
+  buildList();
+}
+
+function refreshWatchlistBanner() {
+  const banner = document.getElementById('watchlistBanner');
+  const chips = document.getElementById('watchlistChips');
+  if (!watchlist.length) { banner.classList.remove('show'); return; }
+  banner.classList.add('show');
+  chips.innerHTML = watchlist.map(id => {
+    const b = brands.find(x => x.id === id);
+    return b ? `<span class="watchlist-chip" onclick="toggleDetail(brands.find(x=>x.id==='${id}'))">${b.name}</span>` : '';
+  }).join('');
+}
+
+function toggleWatchlistFilter() {
+  watchlistFilterOn = !watchlistFilterOn;
+  document.getElementById('watchlistToggle').classList.toggle('active-filter', watchlistFilterOn);
+  buildList();
+}
+
+function toggleCompareMode() {
+  compareModeOn = !compareModeOn;
+  document.getElementById('compareToggle').classList.toggle('active-filter', compareModeOn);
+  document.getElementById('compareModeHint').classList.toggle('show', compareModeOn);
+  if (!compareModeOn) clearCompare();
+  else buildList();
+}
+
+function toggleCompare(id) {
+  const idx = compareList.indexOf(id);
+  if (idx === -1) {
+    if (compareList.length >= 3) { alert('最多同時比較 3 個品牌'); return; }
+    compareList.push(id);
+  } else {
+    compareList.splice(idx, 1);
+  }
+  document.getElementById('compareModeCount').textContent = `已選 ${compareList.length} 個`;
+  buildList();
+}
+
+function addToCompare(id) {
+  if (!compareList.includes(id)) {
+    if (compareList.length >= 3) { alert('最多同時比較 3 個品牌'); return; }
+    compareList.push(id);
+    compareModeOn = true;
+    document.getElementById('compareToggle').classList.add('active-filter');
+  }
+  refreshCompareBar();
+  buildList();
+}
+
+function refreshCompareBar() {
+  const bar = document.getElementById('compareBar');
+  const chipsEl = document.getElementById('compareChips');
+  if (!compareList.length) { bar.classList.remove('show'); return; }
+  bar.classList.add('show');
+  chipsEl.innerHTML = compareList.map(id => {
+    const b = brands.find(x => x.id === id);
+    const tc = TYPES[b.type];
+    return `<span class="compare-chip"><span style="width:8px;height:8px;border-radius:50%;background:${tc.dot};display:inline-block;"></span>${b.name}<button onclick="toggleCompare('${id}')">✕</button></span>`;
+  }).join('');
+}
+
+function runCompare() {
+  if (compareList.length < 2) { alert('請選擇至少 2 個品牌'); return; }
+  const selected = compareList.map(id => brands.find(b => b.id === id));
+  const gridStyle = `grid-template-columns: 90px ${selected.map(() => '1fr').join(' ')}`;
+
+  const rowDefs = [
+    { label:'類型',     fmt: b => `<span style="display:inline-block;font-size:11px;padding:2px 8px;border-radius:999px;background:${TYPES[b.type].bg};color:${TYPES[b.type].txt};font-weight:500;">${TYPES[b.type].label}</span>` },
+    { label:'成立',     fmt: b => b.origin },
+    { label:'商業模式', fmt: b => b.model },
+    { label:'進入方式', fmt: b => b.entry },
+    { label:'主要市場', fmt: b => b.market },
+    { label:'市場動能', fmt: b => `<span style="font-weight:600;color:${MOMENTUM[b.momentum].color};">${b.momentumLabel}</span>` },
+    { label:'最新動態', fmt: b => b.news },
+  ];
+
+  const headersHTML = `
+    <div style="display:grid;grid-template-columns:${selected.map(()=>'1fr').join(' ')};gap:8px;margin-bottom:12px;">
+      ${selected.map(b => {
+        const tc = TYPES[b.type];
+        return `<div class="compare-brand-card" style="--tc:${tc.dot};">
+          <div class="compare-brand-name">${b.name}</div>
+          <span class="compare-brand-badge" style="background:${tc.bg};color:${tc.txt};">${tc.label}</span>
+        </div>`;
+      }).join('')}
+    </div>`;
+
+  const rowsHTML = rowDefs.map(r => `
+    <div class="compare-row" style="${gridStyle}">
+      <div class="compare-cell label">${r.label}</div>
+      ${selected.map(b => `<div class="compare-cell">${r.fmt(b)}</div>`).join('')}
+    </div>`).join('');
+
+  document.getElementById('compareModalTitle').textContent = `${selected.map(b => b.name).join(' vs ')}`;
+  document.getElementById('compareModalBody').innerHTML = headersHTML + `<div class="compare-table">${rowsHTML}</div>`;
+  document.getElementById('compareModal').classList.add('show');
+}
+
+function closeCompareModal() {
+  document.getElementById('compareModal').classList.remove('show');
+}
+
+function clearCompare() {
+  compareList = [];
+  compareModeOn = false;
+  document.getElementById('compareToggle').classList.remove('active-filter');
+  document.getElementById('compareModeHint').classList.remove('show');
+  document.getElementById('compareModeCount').textContent = '已選 0 個';
+  document.getElementById('compareTableWrap').classList.remove('show');
+  document.getElementById('compareTableWrap').innerHTML = '';
+  buildList();
+}
+
+function exportCSV() {
+  const cols = ['name','origin','type','model','entry','market','news','momentum'];
+  const header = ['品牌名稱','起源','類型','商業模式','進入方式','主要市場','最新動態','市場動能'];
+  const rows = brands.map(b => cols.map(k => {
+    if (k === 'type') return TYPES[b.type].label;
+    if (k === 'momentum') return b.momentumLabel;
+    return '"' + String(b[k] || '').replace(/"/g,'""') + '"';
+  }).join(','));
+  const csv = '\uFEFF' + header.join(',') + '\n' + rows.join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+  a.download = '新型態住宿品牌追蹤器.csv';
+  a.click();
+}
+
+/* MAP */
+function buildMapLegend() {
+  document.getElementById('mapLeg').innerHTML = Object.entries(TYPES).map(([,tc]) =>
+    `<span class="leg-item"><span class="leg-dot" style="background:${tc.dot}"></span>${tc.label}</span>`).join('');
+}
+
+function initMap() {
+  if (mapInstance) return;
+  mapInstance = new maplibregl.Map({
+    container: 'map',
+    style: 'https://tiles.openfreemap.org/styles/positron',
+    center: [20, 25], zoom: 1.8, attributionControl: false
+  });
+  mapInstance.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
+  mapInstance.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-right');
+  mapInstance.on('load', () => {
+    const style = mapInstance.getStyle();
+    if (style && style.layers) {
+      style.layers.forEach(layer => {
+        if (layer.layout && layer.layout['text-field']) {
+          try { mapInstance.setLayoutProperty(layer.id, 'text-field', ['coalesce',['get','name:en'],['get','name:latin'],['get','name']]); } catch(e) {}
+        }
+      });
+    }
+    renderMarkers();
+  });
+}
+
+function renderMarkers() {
+  if (!mapInstance) return;
+  document.querySelectorAll('.brand-marker').forEach(el => el.remove());
+  if (activePopup) { activePopup.remove(); activePopup = null; }
+  const filtered = mapFilter === 'all' ? brands : brands.filter(b => b.type === mapFilter);
+  filtered.forEach(b => {
+    const tc = TYPES[b.type];
+    const wrapper = document.createElement('div');
+    wrapper.className = 'brand-marker';
+    wrapper.style.cssText = `width:22px;height:22px;cursor:pointer;`;
+
+    const dot = document.createElement('div');
+    dot.style.cssText = `
+      width:22px;height:22px;border-radius:50%;
+      background:${tc.dot};border:2.5px solid #fff;
+      box-shadow:0 1px 4px rgba(0,0,0,0.22);
+      transition:transform 0.15s ease;
+      will-change:transform;
+    `;
+    wrapper.appendChild(dot);
+
+    wrapper.addEventListener('mouseenter', () => { dot.style.transform = 'scale(1.5)'; });
+    wrapper.addEventListener('mouseleave', () => { dot.style.transform = 'scale(1)'; });
+    wrapper.addEventListener('click', () => {
+      if (activePopup) { activePopup.remove(); activePopup = null; }
+      activePopup = new maplibregl.Popup({ offset: 14, closeButton: true, maxWidth: '260px' })
+        .setLngLat([b.lon, b.lat])
+        .setHTML(`<div class="map-popup-name">${b.name}</div><div class="map-popup-origin">${b.origin}</div><div class="map-popup-tagline">${b.tagline}</div><span class="map-popup-badge" style="background:${tc.bg};color:${tc.txt};">${tc.label}</span>`)
+        .addTo(mapInstance);
+    });
+    new maplibregl.Marker({ element: wrapper }).setLngLat([b.lon, b.lat]).addTo(mapInstance);
+  });
+}
+
+document.getElementById('mapPills').addEventListener('click', e => {
+  if (!e.target.matches('.pill')) return;
+  document.querySelectorAll('#mapPills .pill').forEach(p => p.classList.remove('active'));
+  e.target.classList.add('active');
+  mapFilter = e.target.dataset.filter;
+  if (mapInstance && mapInstance.loaded()) renderMarkers();
+});
+
+/* TABS */
+const tabs = ['list','diff','map','search'];
+document.querySelector('.tab-bar').addEventListener('click', e => {
+  if (!e.target.matches('.tab')) return;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  e.target.classList.add('active');
+  const id = e.target.dataset.tab;
+  tabs.forEach(t => document.getElementById('tab-'+t).classList.toggle('hidden', t !== id));
+  if (id === 'map') { setTimeout(initMap, 50); }
+});
+
+/* SEARCH */
+document.getElementById('searchInput').addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
+
+function goSearch(q) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelector('[data-tab="search"]').classList.add('active');
+  tabs.forEach(t => document.getElementById('tab-'+t).classList.toggle('hidden', t !== 'search'));
+  document.getElementById('searchInput').value = q;
+  doSearch();
+}
+function qs(q) { document.getElementById('searchInput').value = q; doSearch(); }
+
+async function doSearch() {
+  const q = document.getElementById('searchInput').value.trim();
+  if (!q) return;
+  const apiKey = localStorage.getItem('anthropic_api_key');
+  const result = document.getElementById('aiResult');
+  const lbl = document.getElementById('aiLbl');
+  const txt = document.getElementById('aiText');
+  const note = document.getElementById('aiNote');
+  result.classList.add('show');
+  lbl.textContent = '搜尋中…';
+  txt.innerHTML = '<span style="color:var(--text-3);font-style:italic;">AI 聯網查詢中，請稍候…</span>';
+  note.textContent = '';
+
+  if (!apiKey) {
+    lbl.textContent = '需要 API Key';
+    txt.innerHTML = '請在上方設定 Anthropic API Key 後再使用此功能。';
+    return;
+  }
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-allow-browser': 'true' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+        system: '你是一個專注於全球新型態住宿品牌的研究助理。用繁體中文回答，重點整理最新動態、商業模式、投資邏輯。回答簡潔有重點，250-400字，不要用markdown符號或標題，用自然段落呈現。',
+        messages: [{ role: 'user', content: q }]
+      })
+    });
+    if (!res.ok) { const e = await res.json().catch(()=>({})); throw new Error(e.error?.message || `HTTP ${res.status}`); }
+    const data = await res.json();
+    const content = data.content.filter(c => c.type === 'text').map(c => c.text).join('\n').trim();
+    lbl.textContent = '搜尋結果 · ' + q;
+    txt.innerHTML = content.split('\n\n').filter(Boolean).map(p => `<p style="margin-bottom:9px;">${p.replace(/\n/g,'<br>')}</p>`).join('');
+    note.textContent = '資料由 AI 即時聯網查詢，建議參照原始來源確認。';
+  } catch(e) {
+    lbl.textContent = '搜尋失敗';
+    txt.innerHTML = `<span style="color:var(--text-2);">錯誤：${e.message}。請確認 API Key 是否正確，或改用 <a href="https://claude.ai" target="_blank" style="color:#185FA5;">claude.ai</a> 搜尋。</span>`;
+  }
+}
+
+initApiKey();
+buildList();
+</script>
+</body>
+</html>
