@@ -34,6 +34,62 @@ header { padding: 24px 28px 0; display: flex; align-items: flex-end; justify-con
 /* LAYOUT */
 .content-area { padding: 20px 28px 48px; }
 
+/* BRAND COL LAYOUT */
+.brand-col { display: flex; flex-direction: column; gap: 0; }
+.brand-card-wrap { display: flex; flex-direction: column; margin-bottom: 8px; }
+.brand-drawer { display: none; }
+.brand-drawer.open { display: block; }
+
+/* tap hint — only show on touch devices */
+.bc-tap-hint { display: none; font-size: 10px; color: var(--text-3); text-align: right; margin-top: 5px; }
+@media (hover: none) { .bc-tap-hint { display: block; } }
+
+/* DARK MODE */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1a1917;
+    --surface: #242220;
+    --border: rgba(255,255,255,0.08);
+    --border-md: rgba(255,255,255,0.14);
+    --text: #f0ede8;
+    --text-2: #a09d97;
+    --text-3: #6b6865;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+  .brand-card { background: #2a2826; border-color: rgba(255,255,255,0.12); }
+  .brand-card:hover { background: #302e2c; }
+  .brand-card.active { background: var(--tc-bg) !important; filter: brightness(0.25); }
+  .detail-drawer { background: #222120 !important; }
+  .dd-item { background: rgba(255,255,255,0.06) !important; }
+  .compare-mode-hint { background: #2a2826; border: 0.5px solid rgba(255,255,255,0.15); }
+  .watchlist-banner { background: #2a2619; border-color: #5a4a10; }
+  .watchlist-chip { background: #3a3010; color: #d4a830; border-color: #5a4a10; }
+  .qa-q { color: var(--text); }
+  .qa-q:hover, .qa-q.open { background: #2a2826; }
+  .qa-a { background: #222120; color: var(--text-2); }
+  .compare-modal { background: #242220; }
+  .compare-modal-header { background: #242220; border-color: rgba(255,255,255,0.1); }
+  .compare-brand-card { background: #2a2826; }
+  .compare-row:nth-child(even) { background: #2a2826; }
+  .compare-cell { color: var(--text-2); border-color: rgba(255,255,255,0.07); }
+  .compare-cell.label { background: #242220; color: var(--text-3); }
+  .spectrum-wrap { background: #242220; }
+  .diff-split { background: #242220 !important; }
+  .diff-right { background: #2a2826 !important; }
+  header { border-bottom: 0.5px solid rgba(255,255,255,0.08); }
+  .hdr-btn { background: #2a2826; border-color: rgba(255,255,255,0.14); color: var(--text-2); }
+  .tab-bar { border-color: rgba(255,255,255,0.1); }
+  .tab { color: var(--text-3); }
+  .tab.active { color: var(--text); border-bottom-color: var(--text); }
+  .search-input { background: #2a2826; border-color: rgba(255,255,255,0.14); color: var(--text); }
+  .api-key-notice { background: #1a2535; border-color: #2a4060; color: #7ab0e0; }
+  .api-key-input { background: #1a2535; border-color: #2a4060; color: var(--text); }
+  .maplibregl-popup-content { background: #242220 !important; border-color: rgba(255,255,255,0.15) !important; color: var(--text) !important; }
+  .map-popup-name, .map-popup-origin, .map-popup-tagline { color: var(--text) !important; }
+  .bc-name { color: var(--text); }
+}
+
 /* LIST */
 .type-section { margin-bottom: 24px; }
 .type-header { display: flex; align-items: center; gap: 8px; margin-bottom: 9px; }
@@ -41,16 +97,22 @@ header { padding: 24px 28px 0; display: flex; align-items: flex-end; justify-con
 .type-label-txt { font-size: 11px; font-weight: 600; color: var(--text-2); letter-spacing: 0.07em; text-transform: uppercase; }
 .type-count-txt { font-size: 11px; color: var(--text-3); }
 .brand-row { display: flex; gap: 8px; flex-wrap: wrap; }
-
-/* BRAND CARD */
 .brand-card {
   background: var(--surface); border: 0.5px solid var(--border-md);
   border-left: 3px solid var(--tc,#ccc); border-radius: var(--radius);
-  padding: 11px 12px 11px 11px; cursor: pointer; transition: background 0.12s;
+  padding: 11px 12px 11px 11px; cursor: pointer; transition: background 0.12s, transform 0.1s;
   width: 200px; flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
 }
 .brand-card:hover { background: #fafaf8; }
-.brand-card.active { background: var(--tc-bg,#f5f5f5); border-color: var(--tc-mid,#ccc); border-left-color: var(--tc,#888); border-left-width: 3px; }
+.brand-card:active { transform: scale(0.985); }
+.brand-card.active {
+  background: var(--tc-bg,#f5f5f5);
+  border-color: var(--tc-mid,#ccc);
+  border-left-color: var(--tc,#888);
+  border-left-width: 3px;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.08);
+}
 .brand-card.watchlisted { box-shadow: inset 0 0 0 1.5px var(--tc,#ccc); }
 .bc-top { display: flex; align-items: center; gap: 9px; margin-bottom: 7px; }
 .bc-avatar { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; letter-spacing: 0.02em; }
@@ -149,6 +211,19 @@ header { padding: 24px 28px 0; display: flex; align-items: flex-end; justify-con
 .s-lbl { position: absolute; top: 10px; font-size: 10px; transform: translateX(-50%); white-space: nowrap; font-weight: 500; }
 .spectrum-note { font-size: 12px; color: var(--text-2); line-height: 1.6; }
 
+/* Q&A PRESET */
+.qa-item { border-bottom: 0.5px solid var(--border); }
+.qa-item:last-child { border-bottom: none; }
+.qa-q { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; cursor: pointer; font-size: 13px; color: var(--text); font-weight: 500; gap: 10px; transition: background 0.1s; }
+.qa-q:hover { background: var(--bg); }
+.qa-q.open { background: var(--bg); }
+.qa-tag { font-size: 10px; padding: 2px 8px; border-radius: 999px; font-weight: 500; white-space: nowrap; flex-shrink: 0; }
+.qa-arrow { font-size: 12px; color: var(--text-3); flex-shrink: 0; transition: transform 0.2s; }
+.qa-q.open .qa-arrow { transform: rotate(180deg); }
+.qa-a { display: none; padding: 12px 16px 14px; font-size: 13px; color: var(--text-2); line-height: 1.75; border-top: 0.5px solid var(--border); background: var(--bg); }
+.qa-a.show { display: block; }
+.qa-updated { font-size: 11px; color: var(--text-3); margin-top: 10px; padding-top: 8px; border-top: 0.5px solid var(--border); }
+
 /* SEARCH */
 .search-hint { font-size: 13px; color: var(--text-2); margin-bottom: 12px; }
 .search-row { display: flex; gap: 8px; margin-bottom: 10px; }
@@ -202,9 +277,9 @@ header { padding: 24px 28px 0; display: flex; align-items: flex-end; justify-con
   .tab { font-size: 12px; padding: 6px 11px 8px; flex-shrink: 0; }
   .content-area { padding: 14px 16px 40px; }
 
-  /* BRAND CARDS — full width, stacked */
+  /* BRAND CARDS — full width in column layout */
   .brand-card { width: 100%; }
-  .brand-row { flex-direction: column; }
+  .brand-col { gap: 0; }
 
   /* DETAIL DRAWER */
   .dd-grid { grid-template-columns: 1fr 1fr; }
@@ -266,7 +341,7 @@ header { padding: 24px 28px 0; display: flex; align-items: flex-end; justify-con
   <button class="tab" data-tab="diff">與傳統飯店差異</button>
   <button class="tab active" data-tab="list">品牌列表</button>
   <button class="tab" data-tab="map">地圖視圖</button>
-  <button class="tab" data-tab="search">AI 搜尋</button>
+  <button class="tab" data-tab="search">品牌情報</button>
 </div>
 
 <div class="content-area">
@@ -374,33 +449,36 @@ header { padding: 24px 28px 0; display: flex; align-items: flex-end; justify-con
 
     <!-- SEARCH TAB -->
     <div id="tab-search" class="hidden">
-      <div class="search-wrap">
-        <div class="api-key-notice" id="apiKeyNotice">
-          <strong>設定 API Key 以啟用即時 AI 搜尋</strong><br>
-          前往 <a href="https://console.anthropic.com" target="_blank" style="color:#185FA5;">console.anthropic.com</a> 取得 API Key，貼入後儲存即可使用。Key 僅存在你的瀏覽器本地，不會上傳任何伺服器。
-          <div class="api-key-row">
-            <input class="api-key-input" id="apiKeyInput" type="password" placeholder="sk-ant-..." />
-            <button class="api-key-save" onclick="saveApiKey()">儲存</button>
+      <div class="search-wrap" style="max-width:720px;">
+
+        <!-- Preset Q&A -->
+        <div style="margin-bottom:1.5rem;">
+          <p style="font-size:13px;color:var(--text-2);margin-bottom:12px;">點選問題查看整理好的研究資料（2026年6月更新）</p>
+
+          <div style="display:flex;flex-direction:column;gap:0;border:0.5px solid var(--border-md);border-radius:var(--radius);overflow:hidden;" id="qaList"></div>
+        </div>
+
+        <!-- Live search section -->
+        <div style="border-top:0.5px solid var(--border);padding-top:1.25rem;">
+          <p style="font-size:12px;color:var(--text-3);margin-bottom:10px;">即時 AI 搜尋（需設定 API Key）</p>
+          <div class="api-key-notice" id="apiKeyNotice">
+            前往 <a href="https://console.anthropic.com" target="_blank" style="color:#185FA5;">console.anthropic.com</a> 取得 API Key，貼入後儲存即可啟用即時搜尋。Key 僅存於瀏覽器本地。
+            <div class="api-key-row">
+              <input class="api-key-input" id="apiKeyInput" type="password" placeholder="sk-ant-..." />
+              <button class="api-key-save" onclick="saveApiKey()">儲存</button>
+            </div>
+          </div>
+          <div class="search-row">
+            <input class="search-input" id="searchInput" type="text" placeholder="輸入自訂問題..."/>
+            <button class="search-btn" onclick="doSearch()">搜尋</button>
+          </div>
+          <div class="ai-result" id="aiResult">
+            <div class="ai-result-lbl" id="aiLbl"></div>
+            <div class="ai-result-text" id="aiText"></div>
+            <div class="ai-note" id="aiNote"></div>
           </div>
         </div>
-        <p class="search-hint">輸入品牌名稱或關鍵字，AI 即時聯網查詢最新資訊</p>
-        <div class="search-row">
-          <input class="search-input" id="searchInput" type="text" placeholder="例：Not a Hotel 最新動態、共有產權趨勢..."/>
-          <button class="search-btn" onclick="doSearch()">搜尋</button>
-        </div>
-        <div class="chips">
-          <button class="chip" onclick="qs('Selina 品牌定位與最新動態 2025')">Selina</button>
-          <button class="chip" onclick="qs('全球共有產權住宿品牌 2025 趨勢')">共有產權趨勢</button>
-          <button class="chip" onclick="qs('Not a Hotel 日本新型態飯店 2025 最新')">日本新型態</button>
-          <button class="chip" onclick="qs('wellness hotel 健康住宿品牌最新發展')">健康住宿</button>
-          <button class="chip" onclick="qs('Ennismore 品牌組合策略 2025')">Ennismore</button>
-          <button class="chip" onclick="qs('新型態住宿品牌哪些最有可能被傳統飯店集團收購')">可能被收購的品牌</button>
-        </div>
-        <div class="ai-result" id="aiResult">
-          <div class="ai-result-lbl" id="aiLbl"></div>
-          <div class="ai-result-text" id="aiText"></div>
-          <div class="ai-note" id="aiNote"></div>
-        </div>
+
       </div>
     </div>
 
@@ -494,10 +572,9 @@ function buildList() {
         <span class="type-label-txt">${tc.label}</span>
         <span class="type-count-txt">${group.length} 個品牌</span>
       </div>
-      <div class="brand-row" id="row-${type}"></div>
-      <div id="detail-${type}"></div>`;
+      <div class="brand-col" id="col-${type}"></div>`;
     root.appendChild(sec);
-    group.forEach(b => renderCard(b, document.getElementById('row-' + type)));
+    group.forEach(b => renderCard(b, document.getElementById('col-' + type)));
   });
   refreshWatchlistBanner();
 }
@@ -508,35 +585,36 @@ function renderCard(b, container) {
   const sc = locScore(b);
   const isWatched = watchlist.includes(b.id);
   const isComparing = compareList.includes(b.id);
+
+  const wrap = document.createElement('div');
+  wrap.className = 'brand-card-wrap';
+  wrap.id = 'wrap-' + b.id;
+
   const card = document.createElement('div');
   card.className = 'brand-card' + (activeCard === b.id ? ' active' : '') + (isWatched ? ' watchlisted' : '');
   card.id = 'card-' + b.id;
   card.style.cssText = `--tc:${tc.dot};--tc-mid:${tc.mid};--tc-bg:${tc.bg};`;
 
-  const avatarBg = tc.bg;
-  const avatarColor = tc.txt;
   const initials = avatarInitials(b.name);
-
   card.innerHTML = `
     <div class="bc-top">
-      <div class="bc-avatar" style="background:${avatarBg};color:${avatarColor};">${initials}</div>
+      <div class="bc-avatar" style="background:${tc.bg};color:${tc.txt};">${initials}</div>
       <div class="bc-meta">
         <div class="bc-name">${b.name}</div>
         <div class="bc-origin">${b.origin}</div>
       </div>
-      <div class="bc-check">${isComparing ? '✓' : ''}</div>
-      <button class="bc-watch-btn ${isWatched ? 'on' : ''}" onclick="event.stopPropagation();toggleWatch('${b.id}')" title="加入關注清單">${isWatched ? '★' : '☆'}</button>
+      <div class="bc-check">${isComparing ? '\u2713' : ''}</div>
+      <button class="bc-watch-btn ${isWatched ? 'on' : ''}" onclick="event.stopPropagation();toggleWatch('${b.id}')" title="\u52a0\u5165\u95dc\u6ce8\u6e05\u55ae">${isWatched ? '\u2605' : '\u2606'}</button>
     </div>
     <div class="bc-tagline">${b.tagline}</div>
     <div class="activity-row">
-      <div class="activity-bar-wrap">
-        <div class="activity-bar-fill" style="width:${Math.round(sc*100)}%;background:${tc.dot};opacity:0.65;"></div>
-      </div>
+      <div class="activity-bar-wrap"><div class="activity-bar-fill" style="width:${Math.round(sc*100)}%;background:${tc.dot};opacity:0.65;"></div></div>
       <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
         <div class="momentum-dot" style="background:${mo.color};"></div>
         <span style="font-size:10px;color:var(--text-3);">${b.momentumLabel}</span>
       </div>
-    </div>`;
+    </div>
+    <div class="bc-tap-hint">\u9ede\u64ca\u67e5\u770b\u8a73\u60c5 \u203a</div>`;
 
   card.onclick = () => {
     if (compareModeOn) { toggleCompare(b.id); return; }
@@ -544,63 +622,83 @@ function renderCard(b, container) {
   };
   if (compareModeOn) card.classList.add('comparing-mode');
   if (isComparing) card.classList.add('in-compare');
-  container.appendChild(card);
+
+  const drawer = document.createElement('div');
+  drawer.id = 'drawer-' + b.id;
+  drawer.className = 'brand-drawer';
+
+  wrap.appendChild(card);
+  wrap.appendChild(drawer);
+  container.appendChild(wrap);
 }
 
 function toggleDetail(b) {
   const tc = TYPES[b.type];
-  const detEl = document.getElementById('detail-' + b.type);
+  const drawerEl = document.getElementById('drawer-' + b.id);
+
   if (activeCard === b.id) {
     activeCard = null;
     document.querySelectorAll('.brand-card').forEach(c => c.classList.remove('active'));
-    detEl.innerHTML = '';
+    document.querySelectorAll('.brand-drawer').forEach(d => { d.innerHTML = ''; d.classList.remove('open'); });
     return;
   }
+
   document.querySelectorAll('.brand-card').forEach(c => c.classList.remove('active'));
-  document.querySelectorAll('[id^="detail-"]').forEach(d => d.innerHTML = '');
+  document.querySelectorAll('.brand-drawer').forEach(d => { d.innerHTML = ''; d.classList.remove('open'); });
+
   activeCard = b.id;
   document.getElementById('card-' + b.id)?.classList.add('active');
+
   const mo = MOMENTUM[b.momentum];
   const sc = locScore(b);
-  detEl.innerHTML = `
+  const safeDeep = b.deep.replace(/'/g, "&#39;");
+  const safeId = b.id;
+
+  drawerEl.classList.add('open');
+  drawerEl.innerHTML = `
     <div class="detail-drawer" style="--tc:${tc.dot};--tc-mid:${tc.mid};--tc-bg:${tc.bg};">
       <div class="dd-top">
         <div>
           <div class="dd-name">${b.name}</div>
           <span class="dd-badge" style="background:${tc.bg};color:${tc.txt};">${tc.label}</span>
         </div>
-        <button class="dd-close" onclick="closeDetail('${b.type}')">✕</button>
+        <button class="dd-close" onclick="closeDetail('${safeId}')">\u2715</button>
       </div>
       <p class="dd-desc">${b.desc}</p>
       <div class="dd-grid">
-        <div class="dd-item"><div class="dd-item-l">商業模式</div><div class="dd-item-v">${b.model}</div></div>
-        <div class="dd-item"><div class="dd-item-l">進入方式</div><div class="dd-item-v">${b.entry}</div></div>
-        <div class="dd-item"><div class="dd-item-l">主要市場</div><div class="dd-item-v">${b.market}</div></div>
-        <div class="dd-item"><div class="dd-item-l">最新動態</div><div class="dd-item-v">${b.news}</div></div>
+        <div class="dd-item"><div class="dd-item-l">\u5546\u696d\u6a21\u5f0f</div><div class="dd-item-v">${b.model}</div></div>
+        <div class="dd-item"><div class="dd-item-l">\u9032\u5165\u65b9\u5f0f</div><div class="dd-item-v">${b.entry}</div></div>
+        <div class="dd-item"><div class="dd-item-l">\u4e3b\u8981\u5e02\u5834</div><div class="dd-item-v">${b.market}</div></div>
+        <div class="dd-item"><div class="dd-item-l">\u6700\u65b0\u52d5\u614b</div><div class="dd-item-v">${b.news}</div></div>
       </div>
-      <div style="display:flex;align-items:center;gap:10px;padding:8px 11px;background:rgba(255,255,255,0.6);border-radius:var(--radius-sm);border:0.5px solid var(--tc-mid,#e0e0e0);margin-bottom:10px;">
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 11px;background:rgba(128,128,128,0.08);border-radius:var(--radius-sm);border:0.5px solid var(--tc-mid,#e0e0e0);margin-bottom:10px;">
         <div style="flex:1;">
-          <div style="font-size:11px;color:var(--text-3);margin-bottom:3px;">市場規模（同類型相對值）</div>
+          <div style="font-size:11px;color:var(--text-3);margin-bottom:3px;">\u5e02\u5834\u898f\u6a21\uff08\u540c\u985e\u578b\u76f8\u5c0d\u5024\uff09</div>
           <div style="height:4px;background:var(--border);border-radius:99px;overflow:hidden;">
             <div style="height:100%;width:${Math.round(sc*100)}%;background:${tc.dot};border-radius:99px;"></div>
           </div>
         </div>
         <div style="text-align:right;flex-shrink:0;">
-          <div style="font-size:11px;color:var(--text-3);">市場動能</div>
+          <div style="font-size:11px;color:var(--text-3);">\u5e02\u5834\u52d5\u80fd</div>
           <div style="font-size:12px;font-weight:600;color:${mo.color};">${b.momentumLabel}</div>
         </div>
       </div>
       <div class="dd-actions">
-        <button class="deep-btn" onclick="goSearch('${b.deep}')">${b.deep} →</button>
-        <button class="deep-btn" onclick="addToCompare('${b.id}')">加入比較</button>
+        <button class="deep-btn" onclick="goSearch('${safeDeep}')">${b.deep} \u2192</button>
+        <button class="deep-btn" onclick="addToCompare('${safeId}')">\u52a0\u5165\u6bd4\u8f03</button>
       </div>
     </div>`;
+
+  setTimeout(() => {
+    document.getElementById('card-' + b.id)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, 50);
 }
 
-function closeDetail(type) {
+function closeDetail(id) {
   activeCard = null;
   document.querySelectorAll('.brand-card').forEach(c => c.classList.remove('active'));
-  document.getElementById('detail-' + type).innerHTML = '';
+  const d = document.getElementById('drawer-' + id);
+  if (d) { d.innerHTML = ''; d.classList.remove('open'); }
 }
 
 function toggleWatch(id) {
@@ -873,8 +971,215 @@ async function doSearch() {
   }
 }
 
+/* ---- PRESET Q&A ---- */
+const QA_TAGS = {
+  '核心品牌': { bg:'#EEEDFE', txt:'#3C3489' },
+  '亞洲視角': { bg:'#EAF8F2', txt:'#085041' },
+  '競品比較': { bg:'#FDF0EB', txt:'#712B13' },
+  '產業趨勢': { bg:'#EBF4FD', txt:'#0C447C' },
+  '投資入市': { bg:'#FDF4E3', txt:'#633806' },
+  '新興觀察': { bg:'#F0EFFE', txt:'#3C3489' },
+};
+
+const QA = [
+  {
+    tag:'核心品牌', q:'Not a Hotel 的商業模式與獲利邏輯是什麼？',
+    a:`Not a Hotel 由濱渦伸次於 2020 年創立，核心機制是「共享所有權（Shared Ownership）」而非傳統分時度假（Timeshare）。品牌在日本各地取得具文化與地景意義的土地，邀請國際知名建築師打造設計別墅，再將所有權切分出售——最基本單位為每年 10 晚的使用權，買家擁有的是真實的房屋契約，而非僅是會籍。
+
+獲利來自三個層次：預售款（物件尚未興建即透過預售回收資金，等於以買家資本建造物件）、每月管理費（依持分比例收取，涵蓋清潔、維護、飯店代管服務），以及業主未使用天數轉為飯店出租的收益分成。
+
+業主持有天數可在 Not a Hotel 物件網絡內相互交換，增加持有彈性。品牌也於 2024 年啟動二手交易平台 Not a Hotel 2nd，已出現高於原售價的成交案例，進一步強化資產保值論述。截至 2024 年底，累計總銷售金額已達 227 億日圓（約台幣 47 億）。`
+  },
+  {
+    tag:'核心品牌', q:'Not a Hotel 目前有哪些據點，合作建築師有哪些？',
+    a:`Not a Hotel 目前在日本全國擁有 10 個以上據點，目標三年內擴張至 19 個，遍布宮崎、東京、那須、福岡、北輕井澤、水上、石垣島、瀨戶內等地。
+
+合作建築師橫跨國際一線名家：藤本壯介（Sou Fujimoto）操刀石垣島 EARTH，2025 年 7 月已開幕；BIG（Bjarke Ingels Group）打造瀨戶內三棟夯土牆別墅；Zaha Hadid Architects 為 vertex 沖繩線打造階梯式海岸退隱；片山正通（Masamichi Katayama）設計那須數寄屋風格別墅；SUPPOSE DESIGN OFFICE 負責水上 Toji 系列；Jean Nouvel 則操刀屋久島據點。
+
+品牌更積極透過年度設計競賽（Not a Hotel Design Competition）發掘 40 歲以下新銳建築師，2026 年第二屆以屋久島為基地，首獎 1,000 萬日圓且設計將付諸實現，評審包含 BIG 的 Bjarke Ingels 與藤本壯介。此外，Pharrell Williams 與 NIGO 合作的「Japa Valley Tokyo」預計 2027 年推出，進一步拓展文化跨界合作。`
+  },
+  {
+    tag:'核心品牌', q:'Not a Hotel 的目標客群是誰，定價策略如何？',
+    a:`Not a Hotel 的目標客群是「追求生活方式資產化」的高淨值族群，而非純粹的投資客或旅遊消費者。典型買家是在日本多地工作或生活、嚮往質感旅居但不願承擔全棟物業持有成本的富裕個人或家庭。
+
+定價以入住天數為單位，最基本的 10 晚/年持分起價約 2,300 至 2,500 萬日圓（含稅前），視據點與建築師知名度有所差異。頂級物件如整棟瀨戶內別墅全年使用權要價近 42 億日圓，若僅購買 1/12 持分（約 30 天）則約 3.5 億日圓，另加每月約 55 萬日圓管理費。
+
+品牌也透過旗下 DAO 代幣（NAC）開放較低門檻的參與方式，主打盲盒式「The Door」住宿抽選體驗，以 10 萬日圓等值 NAC 即可參與，進一步擴大潛在客群基礎而不稀釋品牌高端定位。台灣市場方面，Not a Hotel 已與 KEYVEST 丰睿國際不動產合作，鎖定台灣高資產客群、上市公司負責人及跨產業企業家為優先開發對象。`
+  },
+  {
+    tag:'亞洲視角', q:'亞洲有哪些類似 Not a Hotel 的共有產權住宿品牌？',
+    a:`亞洲的共有產權住宿市場仍處於早期發展階段，目前較為明確的案例包括：
+
+印度的 HotelYaari 是最直接的對標品牌，專注四至五星級酒店套房的持分化，最低 5 萬盧比即可持有，主打印度中產客群，2023 年完成種子輪融資。
+
+在日本，Soneva 等高端品牌於馬爾地夫與泰國的部分物件提供持分共有方案，但規模與 Not a Hotel 的系統化程度仍有距離。
+
+墨西哥的 Kocomo 與美國 Pacaso 概念接近但不在亞洲市場。目前亞洲缺乏系統化的設計驅動型共有產權品牌，Not a Hotel 在這個賽道幾乎沒有直接競爭對手。Four Seasons、Aman 等國際品牌雖有品牌住宅（Branded Residence）模式，但屬於全額購買而非持分，邏輯不同。
+
+Not a Hotel DAO 的出現代表品牌也在探索以代幣化方式降低持有門檻，這可能是亞洲市場複製模式時最有潛力的切入方向。`
+  },
+  {
+    tag:'亞洲視角', q:'Not a Hotel 的模式有可能進入台灣或東南亞嗎？',
+    a:`台灣已是 Not a Hotel 的海外重點市場。2026 年 6 月，Not a Hotel 雙執行長（江藤大宗與林亮治）親赴台北嘉佩樂酒店舉辦 VIP 私享晚宴，與台灣高資產客群正式接觸，並宣布與 KEYVEST 丰睿國際不動產建立在地合作夥伴關係。共同執行長江藤大宗表示，台灣對新型態不動產的接受程度在亞洲市場中「相對突出」，是品牌海外重要市場之一。
+
+目前台灣市場的切入方式是銷售日本物件的持分給台灣買家，而非在台灣開發物件。台灣人購買日本房產無特殊限制，日本允許外國人以與本國人相同的條件持有土地與建物，不需居留資格。
+
+東南亞市場在法規上較複雜——多數東南亞國家禁止外國人持有土地，馬來西亞是少數例外。因此 Not a Hotel 在東南亞的擴展路徑更可能是「向東南亞買家銷售日本物件」而非「在東南亞開發物件」，方向與台灣市場相同。`
+  },
+  {
+    tag:'亞洲視角', q:'2025 年日本高端住宿市場有哪些重要趨勢？',
+    a:`日本高端住宿市場 2025 年呈現幾個明顯趨勢：
+
+日圓匯率持續低位帶動外國高端旅客需求激增，同時也讓日本資產對外國投資者更具吸引力，間接推動了 Not a Hotel 等品牌的海外銷售策略。
+
+設計建築驅動的住宿品牌快速成長，不再只靠地段和服務取勝，而是以建築師名氣和設計稀缺性作為核心差異化因素。
+
+文化遺產再開發成為主流，Not a Hotel 的 HERITAGE 品牌進駐京都東寺周邊即是典型案例，將文化敏感地段轉化為高端住宿資產。
+
+品牌住宅（Branded Residence）概念在日本加速落地，Six Senses、Aman 等國際品牌積極布局，吸引希望同時持有資產又享有飯店服務的高淨值買家。
+
+數位遊牧與多地旅居需求帶動「不只有一個家」的生活方式消費，這正是 Not a Hotel 商業模式的核心論述基礎。`
+  },
+  {
+    tag:'競品比較', q:'Not a Hotel 與 Pacaso 的商業模式核心差異是什麼？',
+    a:`兩者都是共有產權住宿品牌，但在幾個關鍵維度上有根本差異：
+
+資產角色：Not a Hotel 的物件由品牌主導開發，建築師合作是品牌核心資產，設計稀缺性是定價基礎。Pacaso 則是在市場上收購現有豪宅，切割後出售，沒有設計主導性。
+
+市場定位：Not a Hotel 更接近「可投資的生活方式品牌」，強調文化、建築與旅居體驗；Pacaso 更接近「豪宅的分散投資工具」，強調財務效益（歷史平均溢價 6% 轉售）。
+
+地理策略：Not a Hotel 深耕日本，以文化地域性為護城河；Pacaso 在美國 40+ 市場廣泛布局，並進入英、法、墨西哥市場。
+
+持分結構：Not a Hotel 以「天數」為購買單位（最少 10 晚/年），彈性較高；Pacaso 以「1/8 持分」為標準單位，每份最多 44 晚/年，結構較為固定。
+
+社群性：Not a Hotel 透過物件網絡天數交換、DAO 代幣、設計競賽建立社群黏性；Pacaso 的體驗更偏純財務性。`
+  },
+  {
+    tag:'競品比較', q:'Not a Hotel 與傳統日本旅館（Ryokan）的市場定位有何不同？',
+    a:`傳統日本旅館（Ryokan）與 Not a Hotel 在幾乎所有維度上都處於不同的市場邏輯：
+
+所有權關係：旅館是純住宿消費，客人與物業沒有財務連結。Not a Hotel 讓客人成為物業的實際持有人，住宿同時是資產持有。
+
+建築美學：Ryokan 承載的是「日本傳統工藝與侘寂美學」，改變緩慢；Not a Hotel 則是「當代國際建築師重新詮釋日本自然地景」，設計前衛且刻意製造話題。
+
+服務模式：Ryokan 以旅館女將（Okami）為核心的人情款待文化見長；Not a Hotel 以 IoT 技術降低人力成本，服務更標準化但彈性高。
+
+客群交疊：高端外國旅客是兩者共同競逐的對象，但 Ryokan 的訴求是「浸淫日本文化傳統」，Not a Hotel 訴求的是「在日本自然環境中擁有一個設計感的家」。两者的核心競爭並不激烈，更可能是同一個旅程裡的不同體驗選擇。`
+  },
+  {
+    tag:'競品比較', q:'Not a Hotel 與 Six Senses 品牌住宅模式有何異同？',
+    a:`兩者都是「住宅 × 酒店服務」的混合模式，但目標族群和商業邏輯有所差異：
+
+入場門檻：Six Senses 品牌住宅是全額購買，如葡萄牙 Comporta 的住宅單元屬於千萬歐元級別；Not a Hotel 的持分最低 2,300 萬日圓起，門檻顯著較低。
+
+資產性質：Six Senses 住宅是獨立的不動產資產，持有人可全年自住或長期出租；Not a Hotel 的持分是「特定天數的使用與所有權」，不適合長住。
+
+品牌管理：兩者都由品牌負責物業管理和服務品質，但 Six Senses 有全球 26 個據點的豐富管理經驗；Not a Hotel 以日本為核心，正在建立管理體系。
+
+設計驅動性：Not a Hotel 以建築師合作為核心競爭力，設計是最大賣點；Six Senses 的競爭力在於「健康療癒哲學」和「永續生活方式」。
+
+對台灣亞洲買家而言，Not a Hotel 的日圓計價加上較低持分門檻，在近期日圓匯率優勢下具有相當吸引力。`
+  },
+  {
+    tag:'產業趨勢', q:'共有產權住宿在亞洲面臨哪些法規與挑戰？',
+    a:`共有產權住宿在亞洲的法規環境差異極大，是品牌擴張最主要的障礙：
+
+土地所有權限制：泰國、印尼、越南、菲律賓等多數東南亞國家不允許外國人持有土地，只能持有公寓（Condominium）。這直接限制了「設計別墅持分」模式的可行性。日本是例外，允許外國人完全持有土地和建物，這也是 Not a Hotel 能向海外買家銷售的法律基礎。
+
+分時度假法規遺產：許多亞洲市場對「共有住宿產品」的監管框架仍沿用 1990 年代的分時度假規定，與現代共有產權模式不完全匹配，造成法律不確定性。
+
+資本流動限制：部分亞洲市場對跨境房產購買有金額限制或審批要求，影響海外買家的參與便利性。
+
+管理費與稅務複雜性：跨國持有不動產涉及雙重課稅問題，持分結構的稅務處理在許多亞洲市場尚無清晰先例。目前最可行的亞洲路徑仍是「向亞洲買家銷售日本物件」，繞開東南亞的法規障礙。`
+  },
+  {
+    tag:'產業趨勢', q:'品牌住宅（Branded Residence）在亞洲的發展現況與趨勢為何？',
+    a:`品牌住宅是目前亞洲高端不動產市場成長最快的細分領域之一。全球品牌住宅供應量的 30% 以上集中在亞太地區，以泰國、中國、印度、越南為主要市場。
+
+亞洲品牌住宅的主要特徵：買家同時獲得「投資資產」與「飯店級生活服務」，不需自行管理物業；開發商藉助品牌（Aman、Four Seasons、Rosewood、Mandarin Oriental、Six Senses 等）提升售價溢價，通常比同地段非品牌住宅高出 20-40%。
+
+2025-2026 年的主要趨勢包括：健康導向品牌住宅快速增加（如 Six Senses、SIRO）；文化遺產再開發（如 Not a Hotel HERITAGE 京都）；小型精品開發取代大型綜合開發；以及品牌向二線城市下沉（如清邁、峇里島、越南芽莊）。
+
+台灣方面，Savills 2025 年報告指出台灣預計三年內新增 26 個國際品牌飯店，高端住宿供給持續提升，但品牌住宅的持分化模式目前仍屬空白，Not a Hotel 模式的引進具有先行者優勢。`
+  },
+  {
+    tag:'投資入市', q:'投資 Not a Hotel 持分的財務邏輯與風險是什麼？',
+    a:`財務邏輯方面：Not a Hotel 的持分屬於真實不動產所有權，可繼承、可轉售，具有資產保值的論述基礎。品牌的二手交易平台 Not a Hotel 2nd 已出現高於原售價的成交案例（如那須物件），提供了流動性佐證。持有期間，業主未使用的天數由品牌代管出租，可獲得租金收益分成，在一定程度上抵消管理費支出。
+
+風險面：第一，日圓計價資產面臨匯率風險，日圓升值對台灣買家有利但反之亦然。第二，持分的市場流動性有限，非標準化資產的二手市場深度仍有待驗證。第三，Not a Hotel 仍是相對年輕的品牌（2020 年創立），長期品牌維護能力和物業管理品質有待時間驗證。第四，每月管理費是持續性固定支出，即便不住也需繳納，需納入持有成本計算。
+
+整體而言，Not a Hotel 的持分更適合定位為「生活方式資產」而非純財務投資，買家的核心動機應是「擁有在日本多地旅居的權利」，財務回報是附加價值而非主要驅動力。`
+  },
+  {
+    tag:'投資入市', q:'外國人購買 Not a Hotel 持分有哪些限制？',
+    a:`好消息是日本對外國人買房限制極少。日本法律允許外國人以與日本人完全相同的條件持有土地和建物，不需居留資格，甚至可以在旅遊簽證停留期間完成購買手續。Not a Hotel 的全程 App 化流程也降低了語言與行政障礙，官方表示最快一個月內即可完成申請到購買。
+
+台灣買家的實際門檻主要在三點：首先是資金匯出，台灣對外匯管制相對寬鬆，個人每年可匯出等值 500 萬美金，但仍需向銀行申報；其次是稅務規劃，在日本持有不動產涉及固定資產稅、都市計畫稅等日本稅務，出租收益在日本需申報，台灣也可能需申報海外所得；第三是語言文件，雖然 Not a Hotel 提供 App 化流程，但實際持有的物業契約為日文，建議委託在地不動產顧問（如 KEYVEST 丰睿）協助。
+
+Not a Hotel 與 KEYVEST 的合作正是為了解決上述痛點，提供從購買、稅務規劃到物業管理的一站式服務。`
+  },
+  {
+    tag:'新興觀察', q:'2025 年亞洲有哪些值得關注的新型態住宿品牌？',
+    a:`2025 年亞洲新型態住宿市場出現幾個值得持續追蹤的方向：
+
+日本設計住宿持續領跑：除 Not a Hotel 外，多個日本建築事務所開始探索住宿商品化，屋久島等地出現了由 Jean Nouvel、V Taller 等建築師操刀的新物件，設計競賽也持續孵化新概念。
+
+印度 HotelYaari：鎖定印度中產的持分化飯店套房品牌，切入龐大的印度市場，模式與 Not a Hotel 類似但定位更大眾化。
+
+峇里島、泰國的精品投資型物件：大量小型精品開發利用外籍長期居留需求，以「持有即旅居」的概念操作，雖多數不具品牌化規模，但整體趨勢明顯。
+
+Aman 與 Four Seasons 在亞洲的品牌住宅加速落地：日本、泰國、印尼均有新案推進，機構級資金的進入抬高了整個賽道的能見度。
+
+健康旅居概念在東南亞崛起：結合 longevity（長壽健康）概念的高端旅居品牌在泰國、馬來西亞開始出現，對應後疫情時代的健康意識升級。`
+  },
+  {
+    tag:'新興觀察', q:'Not a Hotel 的 HERITAGE 與 vertex 新品牌定位為何？',
+    a:`2025 年 12 月，Not a Hotel 正式宣布推出兩個對外開放（非會員制）的子品牌，標誌著品牌策略的重大轉變：
+
+HERITAGE by NOT A HOTEL：落腳京都東寺附近，主打文化遺產地景的沈浸住宿體驗。定位為「讓更多旅人能親身體驗 Not a Hotel 設計美學」的入門通道，不需持分購買，可直接訂房入住，票價相對主品牌較為親民。東寺是京都著名的世界遺產，木造五重塔是日本最高木造建築，選址本身即是品牌文化敘事的延伸。
+
+vertex by NOT A HOTEL：由 Zaha Hadid Architects 操刀，坐落沖繩海岸，以階梯狀退隱的建築語彙呼應海岸地形。定位更前衛、更具建築話題性，對應喜愛當代建築體驗的旅行族群。
+
+這兩個品牌的策略意義：一方面擴大 Not a Hotel 的受眾基礎，讓持分門檻偏高的潛在買家先以住客身份建立品牌認知；另一方面增加物件的飯店收益，優化整體資產運用效率。對品牌而言，這是從「封閉型會員制」走向「開放型品牌生態」的關鍵一步。`
+  },
+];
+
+function buildQA() {
+  const list = document.getElementById('qaList');
+  if (!list) return;
+  list.innerHTML = '';
+  QA.forEach((item, i) => {
+    const tag = QA_TAGS[item.tag] || { bg:'#f0f0ee', txt:'#666' };
+    const div = document.createElement('div');
+    div.className = 'qa-item';
+    div.innerHTML = `
+      <div class="qa-q" id="qa-q-${i}" onclick="toggleQA(${i})">
+        <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;">
+          <span class="qa-tag" style="background:${tag.bg};color:${tag.txt};">${item.tag}</span>
+          <span style="white-space:normal;">${item.q}</span>
+        </div>
+        <span class="qa-arrow">▾</span>
+      </div>
+      <div class="qa-a" id="qa-a-${i}">
+        ${item.a.split('\n\n').map(p => p.trim() ? `<p style="margin-bottom:9px;">${p.replace(/\n/g,'<br>')}</p>` : '').join('')}
+        <div class="qa-updated">資料更新：2026 年 6 月</div>
+      </div>`;
+    list.appendChild(div);
+  });
+}
+
+function toggleQA(i) {
+  const q = document.getElementById('qa-q-' + i);
+  const a = document.getElementById('qa-a-' + i);
+  const isOpen = a.classList.contains('show');
+  document.querySelectorAll('.qa-q').forEach(el => el.classList.remove('open'));
+  document.querySelectorAll('.qa-a').forEach(el => el.classList.remove('show'));
+  if (!isOpen) { q.classList.add('open'); a.classList.add('show'); }
+}
+
 initApiKey();
 buildList();
+buildQA();
 </script>
 </body>
 </html>
